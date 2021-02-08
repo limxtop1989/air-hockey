@@ -1,7 +1,9 @@
 package com.maxim.opengl;
 
 import android.content.Context;
+import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.Matrix;
 
 import com.maxim.opengl.utils.ShaderHelper;
 import com.maxim.opengl.utils.TextResourceReader;
@@ -15,15 +17,13 @@ import javax.microedition.khronos.opengles.GL10;
 
 import static android.opengl.GLES20.GL_FLOAT;
 import static android.opengl.GLES20.GL_LINES;
-import static android.opengl.GLES20.GL_LINE_STRIP;
 import static android.opengl.GLES20.GL_POINTS;
-import static android.opengl.GLES20.GL_TRIANGLES;
 import static android.opengl.GLES20.GL_TRIANGLE_FAN;
 import static android.opengl.GLES20.glDrawArrays;
 import static android.opengl.GLES20.glEnableVertexAttribArray;
 import static android.opengl.GLES20.glGetAttribLocation;
 import static android.opengl.GLES20.glGetUniformLocation;
-import static android.opengl.GLES20.glUniform4f;
+import static android.opengl.GLES20.glUniformMatrix4fv;
 import static android.opengl.GLES20.glUseProgram;
 import static android.opengl.GLES20.glVertexAttribPointer;
 
@@ -45,6 +45,9 @@ public class AirHockeyRender implements GLSurfaceView.Renderer {
     private int aPositionLocation;
     private static final String A_COLOR = "a_Color";
     private int aColorLocation;
+    private static final String U_MATRIX = "u_Matrix";
+    private int uMatrixLocation;
+    private final float[] projectionMatrix = new float[16];
 
     public AirHockeyRender(Context context) {
         mContext = context;
@@ -97,11 +100,23 @@ public class AirHockeyRender implements GLSurfaceView.Renderer {
         glVertexAttribPointer(aColorLocation, COLOR_COMPONENT_COUNT, GL_FLOAT,
                 false, STRIDE, mVertexData);
         glEnableVertexAttribArray(aColorLocation);
+
+        uMatrixLocation = glGetUniformLocation(mProgram, U_MATRIX);
     }
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         gl.glViewport(0, 0, width, height);
+        final float aspectRatio = height > width ? height / width : width / height;
+        if (height > width) {
+            // Portrait
+            Matrix.orthoM(projectionMatrix, 0, -1, 1, -aspectRatio, aspectRatio, -1, 1);
+        } else {
+            // Landscape
+            Matrix.orthoM(projectionMatrix, 0, -aspectRatio, aspectRatio,-1, 1,-1, 1);
+        }
+        // TODO what does count parameter means?
+        glUniformMatrix4fv(uMatrixLocation, 1, false, projectionMatrix, 0);
     }
 
     @Override
