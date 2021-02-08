@@ -31,7 +31,7 @@ public class AirHockeyRender implements GLSurfaceView.Renderer {
 
     private static final int BYTES_PER_FLOAT = 4;
 
-    private static final int POSITION_COMPONENT_COUNT = 4;
+    private static final int POSITION_COMPONENT_COUNT = 2;
     private static final int COLOR_COMPONENT_COUNT = 3;
     private static final int STRIDE = (POSITION_COMPONENT_COUNT + COLOR_COMPONENT_COUNT)
             * BYTES_PER_FLOAT;
@@ -45,9 +45,12 @@ public class AirHockeyRender implements GLSurfaceView.Renderer {
     private int aPositionLocation;
     private static final String A_COLOR = "a_Color";
     private int aColorLocation;
+
     private static final String U_MATRIX = "u_Matrix";
     private int uMatrixLocation;
     private final float[] projectionMatrix = new float[16];
+
+    private final float[] modelMatrix = new float[16];
 
     public AirHockeyRender(Context context) {
         mContext = context;
@@ -55,18 +58,18 @@ public class AirHockeyRender implements GLSurfaceView.Renderer {
         float[] tableVertices = new float[]{
                 // Order of coordinates: X, Y, Z, W, R, G, B
                 // Triangle Fan
-                   0f,    0f, 0f, 1.5f,   1f,  1f,    1f,
-                -0.5f, -0.5f, 0f,   1f, 0.7f, 0.7f, 0.7f,
-                 0.5f, -0.5f, 0f,   1f, 0.7f, 0.7f, 0.7f,
-                 0.5f,  0.5f, 0f,   2f, 0.7f, 0.7f, 0.7f,
-                -0.5f,  0.5f, 0f,   2f, 0.7f, 0.7f, 0.7f,
-                -0.5f, -0.5f, 0f,   1f, 0.7f, 0.7f, 0.7f,
+                   0f,    0f, /*0f, 1.5f,*/   1f,  1f,    1f,
+                -1f, -1f, /*0f,   1f,*/ 0.7f, 0.7f, 0.7f,
+                 1f, -1f, /*0f,   1f,*/ 0.7f, 0.7f, 0.7f,
+                 1f,  1f, /*0f,   2f,*/ 0.7f, 0.7f, 0.7f,
+                -1f,  1f, /*0f,   2f,*/ 0.7f, 0.7f, 0.7f,
+                -1f, -1f, /*0f,   1f,*/ 0.7f, 0.7f, 0.7f,
                 // Line 1
-                -0.5f, 0f, 0f, 1.5f, 1f, 0f, 0f,
-                 0.5f, 0f, 0f, 1.5f, 1f, 0f, 0f,
+                -1f, 0f, /*0f, 1.5f,*/ 1f, 0f, 0f,
+                 1f, 0f, /*0f, 1.5f,*/ 1f, 0f, 0f,
                 // Mallets
-                0f, -0.25f, 0f, 1.5f, 0f, 0f, 1f,
-                0f,  0.25f, 0f, 1.5f, 1f, 0f, 0f
+                0f,  -0.6f, /*0f, 1.5f,*/ 0f, 0f, 1f,
+                0f,   0.6f, /*0f, 1.5f,*/ 1f, 0f, 0f
         };
 
         // Create native memory used by OpenGL.
@@ -109,13 +112,22 @@ public class AirHockeyRender implements GLSurfaceView.Renderer {
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         gl.glViewport(0, 0, width, height);
         final float aspectRatio = height > width ? height / width : width / height;
-        if (height > width) {
-            // Portrait
-            Matrix.orthoM(projectionMatrix, 0, -1, 1, -aspectRatio, aspectRatio, -1, 1);
-        } else {
-            // Landscape
-            Matrix.orthoM(projectionMatrix, 0, -aspectRatio, aspectRatio,-1, 1,-1, 1);
-        }
+//        if (height > width) {
+//            // Portrait
+//            Matrix.orthoM(projectionMatrix, 0, -1, 1, -aspectRatio, aspectRatio, -1, 1);
+//        } else {
+//            // Landscape
+//            Matrix.orthoM(projectionMatrix, 0, -aspectRatio, aspectRatio,-1, 1,-1, 1);
+//        }
+        // The matrix operation order matters.
+        Matrix.setIdentityM(modelMatrix, 0);
+        Matrix.translateM(modelMatrix, 0, 0, 0, -3f);
+        Matrix.rotateM(modelMatrix, 0, -30, 1, 0, 0);
+        // near is exclude
+        Matrix.perspectiveM(projectionMatrix, 0, 45, aspectRatio, 1f, 10f);
+        final float[] transformMatrix = new float[16];
+        Matrix.multiplyMM(transformMatrix, 0, projectionMatrix, 0, modelMatrix, 0);
+        System.arraycopy(transformMatrix, 0, projectionMatrix, 0, transformMatrix.length);
         // TODO what does count parameter means?
         glUniformMatrix4fv(uMatrixLocation, 1, false, projectionMatrix, 0);
     }
