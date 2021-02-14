@@ -5,8 +5,13 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 
+import com.maxim.opengl.bean.Mallet;
+import com.maxim.opengl.bean.Table;
+import com.maxim.opengl.program.ColorShaderProgram;
+import com.maxim.opengl.program.TextureShaderProgram;
 import com.maxim.opengl.utils.ShaderHelper;
 import com.maxim.opengl.utils.TextResourceReader;
+import com.maxim.opengl.utils.TextureHelper;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -29,83 +34,29 @@ import static android.opengl.GLES20.glVertexAttribPointer;
 
 public class AirHockeyRender implements GLSurfaceView.Renderer {
 
-    private static final int BYTES_PER_FLOAT = 4;
-
-    private static final int POSITION_COMPONENT_COUNT = 2;
-    private static final int COLOR_COMPONENT_COUNT = 3;
-    private static final int STRIDE = (POSITION_COMPONENT_COUNT + COLOR_COMPONENT_COUNT)
-            * BYTES_PER_FLOAT;
-
     private Context mContext;
-
-    private final FloatBuffer mVertexData;
-    private int mProgram;
-
-    private static final String A_POSITION = "a_Position";
-    private int aPositionLocation;
-    private static final String A_COLOR = "a_Color";
-    private int aColorLocation;
-
-    private static final String U_MATRIX = "u_Matrix";
-    private int uMatrixLocation;
     private final float[] projectionMatrix = new float[16];
-
     private final float[] modelMatrix = new float[16];
+
+    private Table table;
+    private Mallet mallet;
+    private TextureShaderProgram textureProgram;
+    private ColorShaderProgram colorProgram;
+    private int texture;
 
     public AirHockeyRender(Context context) {
         mContext = context;
-        // Vertex attribute array.
-        float[] tableVertices = new float[]{
-                // Order of coordinates: X, Y, Z, W, R, G, B
-                // Triangle Fan
-                   0f,    0f, /*0f, 1.5f,*/   1f,  1f,    1f,
-                -1f, -1f, /*0f,   1f,*/ 0.7f, 0.7f, 0.7f,
-                 1f, -1f, /*0f,   1f,*/ 0.7f, 0.7f, 0.7f,
-                 1f,  1f, /*0f,   2f,*/ 0.7f, 0.7f, 0.7f,
-                -1f,  1f, /*0f,   2f,*/ 0.7f, 0.7f, 0.7f,
-                -1f, -1f, /*0f,   1f,*/ 0.7f, 0.7f, 0.7f,
-                // Line 1
-                -1f, 0f, /*0f, 1.5f,*/ 1f, 0f, 0f,
-                 1f, 0f, /*0f, 1.5f,*/ 1f, 0f, 0f,
-                // Mallets
-                0f,  -0.6f, /*0f, 1.5f,*/ 0f, 0f, 1f,
-                0f,   0.6f, /*0f, 1.5f,*/ 1f, 0f, 0f
-        };
-
-        // Create native memory used by OpenGL.
-        mVertexData = ByteBuffer.allocateDirect(tableVertices.length * BYTES_PER_FLOAT)
-                .order(ByteOrder.nativeOrder())
-                .asFloatBuffer();
-        // Copy heap memory into native memory.
-        mVertexData.put(tableVertices);
     }
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        String vertexShaderSource = TextResourceReader.readTextFileFromResource(mContext,
-                R.raw.vertex_shader);
-        String fragmentShaderSource = TextResourceReader.readTextFileFromResource(mContext,
-                R.raw.fragment_shader);
-        int vertexShader = ShaderHelper.compileVertexShader(vertexShaderSource);
-        int fragmentShader = ShaderHelper.compileFragmentShader(fragmentShaderSource);
+        table = new Table();
+        mallet = new Mallet();
 
-        mProgram = ShaderHelper.linkProgram(vertexShader, fragmentShader);
-        ShaderHelper.validateProgram(mProgram);
-        glUseProgram(mProgram);
+        textureProgram = new TextureShaderProgram(mContext);
+        colorProgram = new ColorShaderProgram(mContext);
 
-        aPositionLocation = glGetAttribLocation(mProgram, A_POSITION);
-        mVertexData.position(0);
-        glVertexAttribPointer(aPositionLocation, POSITION_COMPONENT_COUNT, GL_FLOAT,
-                false, STRIDE, mVertexData);
-        glEnableVertexAttribArray(aPositionLocation);
-
-        aColorLocation = glGetAttribLocation(mProgram, A_COLOR);
-        mVertexData.position(POSITION_COMPONENT_COUNT);
-        glVertexAttribPointer(aColorLocation, COLOR_COMPONENT_COUNT, GL_FLOAT,
-                false, STRIDE, mVertexData);
-        glEnableVertexAttribArray(aColorLocation);
-
-        uMatrixLocation = glGetUniformLocation(mProgram, U_MATRIX);
+        texture = TextureHelper.loadTexture(mContext, R.drawable.air_hockey_surface);
     }
 
     @Override
@@ -125,24 +76,28 @@ public class AirHockeyRender implements GLSurfaceView.Renderer {
         Matrix.rotateM(modelMatrix, 0, -30, 1, 0, 0);
         // near is exclude
         Matrix.perspectiveM(projectionMatrix, 0, 45, aspectRatio, 1f, 10f);
+//        Matrix.setIdentityM(projectionMatrix, 0);
         final float[] transformMatrix = new float[16];
         Matrix.multiplyMM(transformMatrix, 0, projectionMatrix, 0, modelMatrix, 0);
         System.arraycopy(transformMatrix, 0, projectionMatrix, 0, transformMatrix.length);
         // TODO what does count parameter means?
-        glUniformMatrix4fv(uMatrixLocation, 1, false, projectionMatrix, 0);
+//        glUniformMatrix4fv(uMatrixLocation, 1, false, projectionMatrix, 0);
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
         gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
-        // Draw two triangles.
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 6);
 
-        glDrawArrays(GL_LINES, 6, 2);
+        textureProgram.useProgram();
+        // TODO: The matrix doesn't work.
+        textureProgram.setUniform(projectionMatrix, texture);
+        table.bindData(textureProgram);
+        table.draw();
 
-        glDrawArrays(GL_POINTS, 8, 1);
-
-        glDrawArrays(GL_POINTS, 9,1);
+        colorProgram.useProgram();
+        colorProgram.setUniforms(projectionMatrix);
+        mallet.bindData(colorProgram);
+        mallet.draw();
 
     }
 }

@@ -21,11 +21,22 @@ import static android.opengl.GLES20.glGetShaderInfoLog;
 import static android.opengl.GLES20.glGetShaderiv;
 import static android.opengl.GLES20.glLinkProgram;
 import static android.opengl.GLES20.glShaderSource;
+import static android.opengl.GLES20.glUseProgram;
 import static android.opengl.GLES20.glValidateProgram;
 
 public class ShaderHelper {
 
     private static final String TAG = ShaderHelper.class.getSimpleName();
+
+    public static int buildProgram(String vertexShaderSource, String fragmentShaderSource) {
+        int vertexShader = ShaderHelper.compileVertexShader(vertexShaderSource);
+        int fragmentShader = ShaderHelper.compileFragmentShader(fragmentShaderSource);
+
+        int program = ShaderHelper.linkProgram(vertexShader, fragmentShader);
+        ShaderHelper.validateProgram(program);
+
+        return program;
+    }
 
     public static int compileVertexShader(String shaderCode) {
         return compileShader(GL_VERTEX_SHADER, shaderCode);
@@ -33,7 +44,6 @@ public class ShaderHelper {
 
     public static int compileFragmentShader(String shaderCode) {
         return compileShader(GL_FRAGMENT_SHADER, shaderCode);
-
     }
 
     private static int compileShader(int type, String shaderCode) {
@@ -55,7 +65,7 @@ public class ShaderHelper {
             return shaderObjectId;
         }
 
-        LogWrapper.d(new String[] {"shaderCode", "GLLogInfo"}, new String[]{shaderCode, glGetShaderInfoLog(shaderObjectId)});;
+//        LogWrapper.d(new String[] {"shaderCode", "GLLogInfo"}, new String[]{shaderCode, glGetShaderInfoLog(shaderObjectId)});;
 
         return shaderObjectId;
     }
