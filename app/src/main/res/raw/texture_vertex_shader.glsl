@@ -8,6 +8,6 @@ varying vec2 v_TextureCoordinates;
 
 void main() {
     v_TextureCoordinates = a_TextureCoordinates;
-    gl_Position = a_Position;
-//    gl_Position = u_Matrix * a_Position;
+//    gl_Position = a_Position;
+    gl_Position = u_Matrix * a_Position;
 }

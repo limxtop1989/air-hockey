@@ -15,7 +15,7 @@ public class ColorShaderProgram extends ShaderProgram {
 
     public ColorShaderProgram(Context context) {
         super(context, R.raw.vertex_shader, R.raw.fragment_shader);
-        uMatrixLocation = GLES20.glGetAttribLocation(program, U_MATRIX);
+        uMatrixLocation = GLES20.glGetUniformLocation(program, U_MATRIX);
         aPositionLocation = GLES20.glGetAttribLocation(program, A_POSITION);
         aColorLocation = GLES20.glGetAttribLocation(program, A_COLOR);
     }

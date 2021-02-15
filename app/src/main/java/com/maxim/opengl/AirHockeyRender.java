@@ -24,6 +24,7 @@ import static android.opengl.GLES20.GL_FLOAT;
 import static android.opengl.GLES20.GL_LINES;
 import static android.opengl.GLES20.GL_POINTS;
 import static android.opengl.GLES20.GL_TRIANGLE_FAN;
+import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glDrawArrays;
 import static android.opengl.GLES20.glEnableVertexAttribArray;
 import static android.opengl.GLES20.glGetAttribLocation;
@@ -31,6 +32,7 @@ import static android.opengl.GLES20.glGetUniformLocation;
 import static android.opengl.GLES20.glUniformMatrix4fv;
 import static android.opengl.GLES20.glUseProgram;
 import static android.opengl.GLES20.glVertexAttribPointer;
+import static android.opengl.GLES20.glViewport;
 
 public class AirHockeyRender implements GLSurfaceView.Renderer {
 
@@ -61,7 +63,7 @@ public class AirHockeyRender implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        gl.glViewport(0, 0, width, height);
+        glViewport(0, 0, width, height);
         final float aspectRatio = height > width ? height / width : width / height;
 //        if (height > width) {
 //            // Portrait
@@ -72,8 +74,8 @@ public class AirHockeyRender implements GLSurfaceView.Renderer {
 //        }
         // The matrix operation order matters.
         Matrix.setIdentityM(modelMatrix, 0);
-        Matrix.translateM(modelMatrix, 0, 0, 0, -3f);
-        Matrix.rotateM(modelMatrix, 0, -30, 1, 0, 0);
+        Matrix.translateM(modelMatrix, 0, 0, 0, -2.5f);
+        Matrix.rotateM(modelMatrix, 0, -60, 1, 0, 0);
         // near is exclude
         Matrix.perspectiveM(projectionMatrix, 0, 45, aspectRatio, 1f, 10f);
 //        Matrix.setIdentityM(projectionMatrix, 0);
@@ -86,10 +88,9 @@ public class AirHockeyRender implements GLSurfaceView.Renderer {
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
+        glClear(GL10.GL_COLOR_BUFFER_BIT);
 
         textureProgram.useProgram();
-        // TODO: The matrix doesn't work.
         textureProgram.setUniform(projectionMatrix, texture);
         table.bindData(textureProgram);
         table.draw();
