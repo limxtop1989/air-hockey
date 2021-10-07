@@ -22,6 +22,7 @@ public class Table {
             // This is so that the image is oriented with the right side up.
             // To avoid squashing the texture, we use the range 0.1 to 0.9 instead of 0.0 to 1.0
             // to clip the edges and just draw the center portion.
+            // TODO: What are the origin in two coordinate systems
                0f,    0f, 0.5f,  0.5f,
             -0.5f, -0.8f,   0f,  0.9f,
              0.5f, -0.8f,   1f,  0.9f,
